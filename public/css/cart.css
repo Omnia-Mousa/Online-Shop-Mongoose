@@ -23,7 +23,7 @@
     margin: 0;
   }
 
-.btn__danger {
+/* .btn__danger {
   color: red;
   border: 1px solid red;
   background: white;
@@ -33,6 +33,6 @@
 .btn__danger:active {
   background-color: red;
   color: white;
-}
+} */
   
   

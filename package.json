@@ -18,6 +18,7 @@
     "express": "^4.17.1",
     "express-handlebars": "^4.0.4",
     "mongodb": "^3.5.9",
+    "mongoose": "^5.9.23",
     "pug": "^2.0.4"
   }
 }
