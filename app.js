@@ -2,24 +2,37 @@ const path = require('path');
 
 const express = require('express');
 const bodyParser = require('body-parser');
+const session = require('express-session')
+const MongoDBStore = require('connect-mongodb-session')(session);
 
 //OUR OWN IMPORTS FROM OUR OWN MODULES
 const adminRoutes = require('./routes/admin');
 const shopRouting = require('./routes/shop');
+const authRouting = require('./routes/auth');
 const errorController = require('./controllers/error');
 
 const mongoose = require('mongoose')
 const User = require('./models/user');
+const MONGODB_URI = 'mongodb+srv://Omnia-Mousa:BSH0fE1THbkNtZzs@cluster0.qqspu.mongodb.net/OnlineShop?retryWrites=true&w=majority'
 
 const app = express();
+const store = new MongoDBStore({
+  uri : MONGODB_URI,
+  collection : 'sessions'
+});
+
 app.set('view engine', 'ejs');
 app.set('views','views');
 
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(express.static(path.join(__dirname, "public")));
+app.use(session({secret : 'My Secret' , resave : false , saveUninitialized : false , store : store}))
 
 app.use((req, res, next) => {
-  User.findById('5f0d421fdbbc022258b1a2a7')
+  if(!req.session.user){
+    return next();
+  }
+  User.findById(req.session.user._id)
     .then(user => {
       req.user = user
       next();
@@ -29,6 +42,7 @@ app.use((req, res, next) => {
 
 app.use('/admin', adminRoutes);
 app.use(shopRouting);
+app.use(authRouting)
 
 app.use(errorController.get404);
 
@@ -38,7 +52,9 @@ app.use(errorController.get404);
 //   });
 
 //*************** MONGOOSE ********************/
-mongoose.connect('mongodb+srv://Omnia-Mousa:BSH0fE1THbkNtZzs@cluster0.qqspu.mongodb.net/OnlineShop?retryWrites=true&w=majority')
+mongoose.connect(
+  MONGODB_URI
+  )
 .then(result => {
   User.findOne().then(user => {
     if(!user){
@@ -49,10 +65,10 @@ mongoose.connect('mongodb+srv://Omnia-Mousa:BSH0fE1THbkNtZzs@cluster0.qqspu.mong
           items : []
         } 
       })
+      user.save()
     }
-    user.save()
-    app.listen(3000)
   })
+  app.listen(3000)
   
 })
 .catch(err => {
