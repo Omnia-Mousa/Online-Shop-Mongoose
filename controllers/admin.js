@@ -5,8 +5,7 @@ exports.getAddProduct =  (req, res, next) => {
     {
       pageTitle: 'Add Product',
       path : '/admin/add-product',
-      editing: false,
-      isAuthenticated:  req.session.loggedIn
+      editing: false
      });
    };
 
@@ -48,7 +47,7 @@ exports.getEditProduct = (req, res, next) => {
       path: '/admin/edit-product',
       editing: editMode,
       product: product,
-      isAuthenticated:  req.session.loggedIn
+      // isAuthenticated:  req.session.loggedIn
     })
   })
   .catch(err => {
@@ -63,45 +62,43 @@ exports.postEditProduct = (req, res, next) =>{
   const updatedPrice = req.body.price;
   const updateddescription = req.body.description;
   
-  Product.findById(prodId).then(product => {
-    product.title =  updatedTitle;
-    product.price =  updatedPrice ;
-    product.description = updateddescription ;
-    product.imageUrl = updatedimageUrl ;
-    return product.save()
-  })
-  .then(result => {
-    console.log('Edited Product');
-    res.redirect('/admin/products')
-  })
-  .catch(err => {
-    console.log(err)
-  })
+  Product.findById(prodId)
+    .then(product => {
+      if (product.userId.toString() !== req.user._id.toString()) {
+        return res.redirect('/');
+      }
+      product.title = updatedTitle;
+      product.price = updatedPrice;
+      product.description = updateddescription;
+      product.imageUrl = updatedimageUrl;
+      return product.save().then(result => {
+        console.log('UPDATED PRODUCT!');
+        res.redirect('/admin/products');
+      });
+    })
+    .catch(err => console.log(err));
 
 }
 
 exports.postDeleteProduct = (req, res, next) => {
   const prodId = req.body.productId;
-  Product.findByIdAndRemove(prodId)
-  .then(result => {
-    console.log('Destroyed Product');
-    res.redirect('/admin/products')
-  })
-  .catch(err => {
-    console.log(err)
-  })
-  
+  Product.deleteOne({ _id: prodId, userId: req.user._id })
+    .then(() => {
+      console.log('DESTROYED PRODUCT');
+      res.redirect('/admin/products');
+    })
+    .catch(err => console.log(err));
 };
 
 exports.getAdminProducts =  (req, res, next) => {
-  Product.find()
+  Product.find({userId : req.user._id})
   .then(products => {
  res.render('admin/product-list', {
   prods : products,
    pageTitle: 'Admin Product',
    path : '/admin/products',
    hasProducts: products.length > 0,
-   isAuthenticated:  req.session.loggedIn
+  //  isAuthenticated:  req.session.loggedIn
   })
  })
  .catch(err => {
