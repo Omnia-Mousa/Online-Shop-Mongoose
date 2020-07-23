@@ -10,6 +10,9 @@ const flash = require('connect-flash');
 const multer = require('multer');
 const randomString = require('randomstring');
 
+const isAuth = require('./middleware/is-auth')
+const shopController = require('./controllers/shop');
+
 const errorController = require('./controllers/error');
 const User = require('./models/user');
 
@@ -65,12 +68,10 @@ app.use(
     store: store
   })
 );
-app.use(csrfProtection);
 app.use(flash());
 
 app.use((req, res, next) => {
   res.locals.isAuthenticated = req.session.loggedIn;
-  res.locals.csrfToken = req.csrfToken();
   next();
 });
 
@@ -92,6 +93,13 @@ app.use((req, res, next) => {
     });
 });
 
+app.post('/create-order' , isAuth,shopController.postOrder);
+
+app.use(csrfProtection);
+app.use((req, res, next) => {
+  res.locals.csrfToken = req.csrfToken();
+  next();
+});
 
 app.use('/admin', adminRoutes);
 app.use(shopRoutes);
